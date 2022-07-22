@@ -113,7 +113,7 @@ def update_g(s,d,t):
                   ['Вероятный', '0.8'],
                   ['Крайне<Br>вероятный', '1']]
     table_data_2 = [['</b>Пренебрежимо<Br>малые', '</b>Очень<Br>незначительные', '</b>Незначительные', '</b>Заметные', '</b>Большие', '</b>Катастрофические'],
-                    ['<100$', '<1000$', '<5000$', '<20000$', '<1000000$', '<1000000000$']]
+                    ['<100$', '<1000$', '<35000$', '<1000000$', '<40000000$', '<1000000000$']]
 
     x = ff.create_table(table_data,colorscale=['White','White','White'],font_colors=['Black'])
     y = ff.create_table(table_data_2,colorscale=['White','White','White'],font_colors=['Black'])
@@ -137,7 +137,7 @@ def update_g(s,d,t):
            [2,3,3,4,4,5],
            [3,3,4,4,5,5]],
         y=[0,0.2, 0.4, 0.6, 0.8, 1],
-        x=[1, 33.7, 1090, 36008, 1188500, 39264493, 1000000000],
+        x=[1, 33.7, 1090, 36008, 1188500, 35000000, 1000000000],
         showscale = False,
         showlegend= False,
         xgap=2,
@@ -244,7 +244,7 @@ def update_g(s,d,t):
                             'showline': False,
                             "autorange":False,
                             'zeroline': False,
-                            #'showticklabels': False
+                            'showticklabels': False
                             })
 
     x.layout.yaxis2.update({'anchor': 'x2',

@@ -155,16 +155,18 @@ def update_g(s,d,t):
     #x = make_subplots(rows=1, cols=1,x_title = 'Последствия реализации события риска')
 
     def x_x(df,op):
+        d = df.reset_index(drop=True)['Дата'].get(0)
         x_n= go.Scatter(
                     x = df['Последствия'],
                     y = df['Вероятность'],
-                    text=df['Название'],
+                    text = df['Название'],
                     textposition="middle center",
                     textfont=dict(color='white'),
                     mode='markers+text',
                     showlegend= False,
                     hovertemplate='Индекс вероятности: %{y} <Br>' +
-                                  'Индекс последствий: %{x}<extra></extra>',
+                                  'Индекс последствий: %{x}<Br>'+
+                                  'Год: {}<extra></extra>'.format(d),
                     legendgroup="group2",
                     name="second legend group",
                     marker=dict(

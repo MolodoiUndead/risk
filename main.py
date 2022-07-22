@@ -181,8 +181,6 @@ def update_g(s,d,t):
     x3 = x_x(dfp,0.3)
 
     def c(x,dfs,dfp):
-        #a = dfs.copy()
-        #b = dfp.copy()
         dfs.reset_index(drop=True, inplace=True)
         dfp.reset_index(drop=True, inplace=True)
         for i in range(len(dfs)):

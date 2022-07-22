@@ -37,7 +37,7 @@ content = html.Div(id = "page-content",
                    children = [dbc.Row([
                        dbc.Col([html.Br(),
                                 dcc.Graph(id='x',
-                                          config={'displayModeBar': True}),
+                                          config={'displayModeBar': False}),
                                 dcc.Graph(id='y',
                                           config={'displayModeBar': False})]),
                        dbc.Col([

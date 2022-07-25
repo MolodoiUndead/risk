@@ -1,5 +1,6 @@
 import pandas as pd
 import dash
+import math as m
 from dash import dcc
 from dash import html
 import dash_bootstrap_components as dbc
@@ -31,6 +32,8 @@ df = pd.DataFrame(np.array([['Risk1', 19, 0.3, 2222,"IT", 'circle',"Indigo"],
                             ['Risk3', 21, 0.5, 14234091,"IT", 'square',"DarkBlue"],
                             ['Risk3', 22, 0.1, 100342340,"IT", 'square',"DarkBlue"]]),
                   columns=['Название', 'Дата', 'Вероятность','Последствия',"Тип",'Фигура',"Цвет"])
+
+df['Незначительный'] = (df['Вероятность'].astype(float) < 0.4) & (df['Последствия'].astype(float) < 32000)
 
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
 content = html.Div(id = "page-content",
@@ -64,6 +67,11 @@ content = html.Div(id = "page-content",
                                              style={'width': 250, 'margin-left': 5}
                                             ),
                                         html.Br(),
+                                        dcc.Checklist(['Незначительные риски'],
+                                                      ['Незначительные риски'],
+                                                      id='o',
+                                                      style={'width': 250, 'margin-left': 10, 'font-size': 20}),
+                                        html.Br(),
                                         html.A("Дата",style={'text-align':"center"}),
                                         dcc.Slider(int(df['Дата'].sort_values().unique()[0]),
                                                   int(df['Дата'].sort_values().unique()[
@@ -93,20 +101,30 @@ app.layout = dbc.Container(
               Input('s', 'value'),
               Input('d', 'value'),
               Input('t', 'value'),
+              Input('o', 'value'),
               prevent_initial_call=False)
 
-def update_g(s,d,t):
+def update_g(s,d,t,o):
 
     dfs = df.copy()
+
     t_indexes = list(dfs[dfs['Тип'].isin(t)].index)
     dft = dfs.drop(list(set(set(list(dfs.index))).difference(t_indexes)))
     d_indexes = list(dfs[dfs['Название'].isin(d)].index)
     dfd = dft.drop(list(set(set(list(dft.index))).difference(d_indexes)))
     s_indexes = list(dfd[dfd['Дата'] == str(s)].index)
     p_indexes = list(dfd[dfd['Дата'] == str(int(s)-1)].index)
+
     dfp = dfd.drop(list(set(set(list(dfd.index))).difference(p_indexes)))
     dfs = dfd.drop(list(set(set(list(dfd.index))).difference(s_indexes)))
-    #['Крайне<Br>маловероятный', 'Маловероятный', 'Возможный', 'Вероятный', 'Крайне<Br>вероятный']
+
+    if o == []:
+        mv_indexes = list(dfs[dfs['Незначительный'] == False].index)
+        mp_indexes = list(dfs[dfs['Незначительный'] == True].index)
+        mp_indexes = [*map(lambda x: x - 1, mp_indexes)]
+        dfs = dfs.drop(list(set(set(list(dfs.index))).difference(mv_indexes)))
+        dfp = dfp.drop(list(set(set(list(dfp.index))).intersection(mp_indexes)))
+
     table_data = [
                     ['</b>Крайне<Br>вероятный', '</b>1'],
                     ['Вероятный', '0.8'],
@@ -118,6 +136,18 @@ def update_g(s,d,t):
 
     x = ff.create_table(table_data,colorscale=['White','White','White'],font_colors=['Black'])
     y = ff.create_table(table_data_2,colorscale=['White','White','White'],font_colors=['Black'])
+
+
+    z =go.Scatter(#x= np.sqrt((-2*zy) +0.8),
+                  #y=zy,
+                  x= [0,32000,32000],
+                  y= [0.4,0.4,0],
+                  line =dict(color='FireBrick',width=5),
+                  xaxis='x2',
+                  yaxis='y2',
+                  showlegend= False,
+                  hoverinfo='skip')
+
     y.update_layout(height=100,
                     width=1000,
                     #paper_bgcolor='green',
@@ -204,12 +234,21 @@ def update_g(s,d,t):
         x = c(x,dfs,dfp)
     x.add_trace(x2)
     x.add_trace(x3)
+    x.add_trace(z)
+
 
     x.update_layout(height=700,
                     width=1000,
                     #paper_bgcolor='black',
-                    plot_bgcolor='black',
+                    plot_bgcolor='black'
                     )
+    if o == []:
+        x.add_shape(type="rect",
+                      xref="x2", yref="y2",
+                      fillcolor="PaleTurquoise",
+                      x0=0, y0=0, x1=32000, y1=0.4,
+                      line_color="LightSeaGreen",
+                      opacity=0.5)
 
     '''x.update_xaxes(
         #ticktext=['Пренебрежимо<Br>малые', 'Очень<Br>незначительные', 'Незначительные', 'Заметные', 'Большие', 'Катастрофические'],
@@ -249,6 +288,7 @@ def update_g(s,d,t):
                             })
 
     x.layout.yaxis2.update({'anchor': 'x2',
+                            'range': [0, 1],
                             'showgrid': False,
                             'showline': False,
                             'zeroline': False,

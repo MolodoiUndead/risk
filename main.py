@@ -23,7 +23,14 @@ CONTENT_STYLE = {
     "padding": "1rem 0rem",
 }
 
-df = pd.DataFrame(np.array([['Risk1', 19, 0.3, 2222,"IT", 'circle',"Indigo"],
+v = 0.4
+p = 4.5
+
+df = pd.read_excel('risk.xlsx', engine='openpyxl')
+df = df.sort_values(by = 'Дата')
+df['Дата'] = df['Дата'].dt.round('1D')
+#print(type(df['Дата'].dt.year[0]))
+'''df = pd.DataFrame(np.array([['Risk1', 19, 0.3, 2222,"IT", 'circle',"Indigo"],
                             ['Risk1', 20, 0.9, 1050,"IT", 'circle',"Indigo"],
                             ['Risk1', 21, 0.1, 3460,"IT", 'circle',"Indigo"],
                             ['Risk1', 22, 0.2, 5290,"IT", 'circle',"Indigo"],
@@ -35,9 +42,9 @@ df = pd.DataFrame(np.array([['Risk1', 19, 0.3, 2222,"IT", 'circle',"Indigo"],
                             ['Risk3', 20, 0.3, 9123414,"IT", 'square',"DarkBlue"],
                             ['Risk3', 21, 0.5, 14234091,"IT", 'square',"DarkBlue"],
                             ['Risk3', 22, 0.1, 100342340,"IT", 'square',"DarkBlue"]]),
-                  columns=['Название', 'Дата', 'Вероятность','Последствия',"Тип",'Фигура',"Цвет"])
+                  columns=['Название', 'Дата', 'Вероятность','Последствия',"Тип",'Фигура',"Цвет"])'''
 
-df['Незначительный'] = (df['Вероятность'].astype(float) < 0.4) & (df['Последствия'].astype(float) < 32000)
+df['Незначительный'] = (df['Вероятность'].astype(float) < v) & (df['Последствия'].astype(float) < 10**p)
 
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
 
@@ -45,14 +52,36 @@ g_v = df['Название'].unique()
 g_df = df.copy()
 content = html.Div(id = "page-content",
                    children = [dbc.Row([
-                       dbc.Col([html.Br(),
+                       dbc.Col([
+                                        html.A("Год",style={'text-align':"center"}),
+                                        dcc.RangeSlider(int(df['Дата'].dt.year.min()),
+                                                  int(df['Дата'].dt.year.max()),
+                                                  1,
+                                                  value = [int(df['Дата'].dt.year.min()),
+                                                  int(df['Дата'].dt.year.max())],
+                                                  id='s',
+                                                  #value=int(df.loc[0, 'Дата']),
+                                                  #tooltip={"placement":"right"}
+                                                   ),
+                                        html.A("Месяц",style={'text-align':"center"}),
+                                           dcc.RangeSlider(1,12,1,
+                                                           value=[1,12],
+                                                           id='j',
+                                                           # value=int(df.loc[0, 'Дата']),
+                                                           # tooltip={"placement":"right"}
+                                                           ),
+                                        html.A("День",style={'text-align':"center"}),
+                                           dcc.RangeSlider(1,31,1,
+                                                           value=[1,31],
+                                                           id='g',
+                                                           # value=int(df.loc[0, 'Дата']),
+                                                           # tooltip={"placement":"right"}
+                                                           ),
                                 dcc.Graph(id='x',
                                           config={'displayModeBar': False}),
                                 dcc.Graph(id='y',
-                                          config={'displayModeBar': False})]),
+                                          config={'displayModeBar': False})],style={'text-align':"center"}),
                        dbc.Col([
-                                html.Br(),
-                                html.Br(),
                                 html.Br(),
                                 html.Br(),
                                 dbc.Card([ html.H4('Первичная сортировка',style={'text-align':"center"}),
@@ -79,20 +108,7 @@ content = html.Div(id = "page-content",
                                                       [' Незначительные риски'],
                                                       id='o',
                                                       style={'width': 250, 'margin-left': 10, 'font-size': 20}),
-                                        html.Br(),
-                                        html.A("Дата",style={'text-align':"center"}),
-                                        dcc.RangeSlider(int(df['Дата'].sort_values().unique()[0]),
-                                                  int(df['Дата'].sort_values().unique()[
-                                                          len(df['Дата'].sort_values().unique()) - 1]),
-                                                  1,
-                                                  value = [int(df['Дата'].sort_values().unique()[0]),
-                                                  int(df['Дата'].sort_values().unique()[
-                                                          len(df['Дата'].sort_values().unique()) - 1])],
-                                                  id='s',
-                                                  #value=int(df.loc[0, 'Дата']),
-                                                  #tooltip={"placement":"right"}
-                                                   ),
-                                        html.Br(),
+
 
                                 ],
                                     style={'width': 270}),
@@ -114,6 +130,33 @@ content = html.Div(id = "page-content",
                                  html.Br(),
                                  html.Div(id='hidden-div', style={'display':'none'}),
                                  html.Div(id='hidden-div-1', style={'display':'none'}),
+                                 ],
+                                    style={'width': 270}),
+
+                                 html.Br(),
+                                 dbc.Card([html.H4('Настройка уровня значимости',style={'text-align':"center"}),
+                                 html.Br(),
+                                 html.A("Шкала вероятности:",style={'text-align':"center"}),
+                                 dcc.RangeSlider(0,1,
+                                               value=[v],
+                                               id='v',
+                                               tooltip={"placement": "bottom", "always_visible": True},
+                                               included = True
+                                               # value=int(df.loc[0, 'Дата']),
+                                               # tooltip={"placement":"right"}
+                                               ),
+                                 html.Br(),
+                                 html.A("Шкала последствий (log10):", style={'text-align': "center"}),
+                                 dcc.RangeSlider(1,9,
+                                               #marks={i: '{}'.format(10 ** i) for i in [0,1.5,3,4.5,6,7.5,9]},
+                                               value=[p],
+                                               id='p',
+                                               tooltip={"placement": "bottom", "always_visible": True},
+                                               included = True
+                                               # value=int(df.loc[0, 'Дата']),
+                                               # tooltip={"placement":"right"}
+                                               ),
+                                 html.Div(id='hidden-div-2', style={'display':'none'}),
                                  ],
                                     style={'width': 270})
 
@@ -188,8 +231,8 @@ def update_reset_button_2(n,n1,t,v):
               #Input('button-example-1', 'n_clicks'),
               prevent_initial_call=True)
 def update_clicks(click,o,v):
-    o.append(str(click['points'][0]['text']))
-    v.append(str(click['points'][0]['text']))
+    o.append(str(click['points'][0]['text']).split('<')[:-1][0])
+    v.append(str(click['points'][0]['text']).split('<')[:-1][0])
     return list(set(o)), list(set(v)),
 
 
@@ -197,32 +240,64 @@ def update_clicks(click,o,v):
               Output('y', 'figure'),
               Output('d', 'options'),
               Input('s', 'value'),
+              Input('j', 'value'),
+              Input('g', 'value'),
               Input('d', 'value'),
               Input('t', 'value'),
               Input('o', 'value'),
               State('r','value'),
+              Input('v', 'value'),
+              Input('p','value'),
               Input('button-example-1', 'n_clicks'),
               Input('button-example-2', 'n_clicks'),
               prevent_initial_call=False)
 
-def update_g(s,d,t,o,v,n,n1):
+def update_g(s,j,g,d,t,o,l,u,k,n,n1):
     global g_v
-    dfs = df.copy()
+    global p
+    global v
+    global df
+    #dfs = df.copy()
 
     #Нанесение точек на график
     def x_x(df,op):
-        d = df.reset_index(drop=True)['Дата'].get(0)
+        #d = df.reset_index(drop=True)['Дата'].get(0)
         x_n= go.Scatter(
                     x = df['Последствия'],
                     y = df['Вероятность'],
-                    text = df['Название'],
+                    text = df['Название']+'<Br>'+df['Дата'].astype(str),
                     textposition="middle center",
-                    textfont=dict(color='white'),
+                    textfont=dict(color='RebeccaPurple'),
                     mode='markers+text',
                     showlegend= False,
                     hovertemplate='Индекс вероятности: %{y} <Br>' +
-                                  'Индекс последствий: %{x}<Br>'+
-                                  'Год: {}<extra></extra>'.format(d),
+                                  'Индекс последствий: %{x}<Br><extra></extra>',
+                                  #'Дата: {}.{}.{}<extra></extra>'.format(d),
+                    legendgroup="group2",
+                    name="second legend group",
+                    marker=dict(
+                                size=[55] * len(df),
+                                opacity=op,
+                                color=df["Цвет"],
+                                symbol=df['Фигура']),
+                    xaxis='x2',
+                    yaxis='y2'
+                    )
+        return x_n
+
+    def x_x2(df,op):
+        #d = df.reset_index(drop=True)['Дата'].get(0)
+        x_n= go.Scatter(
+                    x = [df['Последствия']],
+                    y = [df['Вероятность']],
+                    text = [df['Название']+'<Br>'+str(df['Дата'].year)+'-'+str(df['Дата'].month)+'-'+str(df['Дата'].day)],
+                    textposition="middle center",
+                    textfont=dict(color='purple'),
+                    mode='markers+text',
+                    showlegend= False,
+                    hovertemplate='Индекс вероятности: %{y} <Br>' +
+                                  'Индекс последствий: %{x}<Br><extra></extra>',
+                                  #'Дата: {}.{}.{}<extra></extra>'.format(d),
                     legendgroup="group2",
                     name="second legend group",
                     marker=dict(
@@ -250,11 +325,12 @@ def update_g(s,d,t,o,v,n,n1):
             x.add_trace(x4)
         return x
 
-    def at(x,s,d,t,o,df):
+    '''def at(x,s,j,g,d,t,o,df):
         xe = []
+        print(s)
         if o == []:
-            mv_indexes = list(df[df['Незначительный'] == False].index)
-            dfs = df.drop(list(set(set(list(df.index))).difference(mv_indexes)))
+            #mv_indexes = list(df[df['Незначительный'] == False].index)
+            #dfs = df.drop(list(set(set(list(df.index))).difference(mv_indexes)))
             ov_indexes = list(df[df['Незначительный'] == True].index)
             dfo = df.drop(list(set(set(list(df.index))).difference(ov_indexes)))
             o_indexes = list(dfo[dfo['Дата'] == str(s[1])].index)
@@ -262,6 +338,7 @@ def update_g(s,d,t,o,v,n,n1):
             f_indexes = list(df[df['Название'].isin(dfk['Название'].unique())].index)
             df = df.drop(list(set(set(list(df.index))).intersection(f_indexes)))
         for i in range(s[0],s[1]+1,1):
+
             dfs = df.copy()
             if i == s[1]:
                 op = 1
@@ -286,8 +363,36 @@ def update_g(s,d,t,o,v,n,n1):
             dfd = dfx.drop(list(set(set(list(dfx.index))).difference(d_indexes)))
             x = c(x, dfd)
         x.add_traces(xe)
-        return x
+        return x'''
 
+    def at(x, s, j, g, d, t, o, df):
+        dfs = df.copy()
+        t_indexes = list(dfs[dfs['Тип'].isin(t)].index)
+        dft = dfs.drop(list(set(set(list(dfs.index))).difference(t_indexes)))
+        d_indexes = list(dfs[dfs['Название'].isin(d)].index)
+        dfd = dft.drop(list(set(set(list(dft.index))).difference(d_indexes)))
+        s_indexes = list(dfd[(dfd['Дата'].dt.year >= int(s[0])) & (dfd['Дата'].dt.year <= int(s[1]))].index)
+        dfj = dfd.drop(list(set(set(list(dfd.index))).difference(s_indexes)))
+        j_indexes = list(dfj[(dfj['Дата'].dt.month >= int(j[0])) & (dfj['Дата'].dt.month <= int(j[1]))].index)
+        dfg = dfj.drop(list(set(set(list(dfj.index))).difference(j_indexes)))
+        g_indexes = list(dfg[(dfg['Дата'].dt.day >= int(g[0])) & (dfg['Дата'].dt.day <= int(g[1]))].index)
+        dfs = dfg.drop(list(set(set(list(dfg.index))).difference(g_indexes)))
+        for h in dfs['Название'].unique():
+            dfx = dfs.copy()
+            d_indexes = list(dfx[dfx['Название'] == h].index)
+            dfd = dfx.drop(list(set(set(list(dfx.index))).difference(d_indexes)))
+            dfd = dfd.reset_index(drop=True)
+            if o == []:
+                if (dfd.loc[len(dfd) - 1]['Незначительный'] == False):
+                    x = c(x, dfd)
+                    x.add_traces(x_x(dfd.loc[:len(dfd)-2],0.5))
+                    x.add_traces(x_x2(dfd.loc[len(dfd)-1], 1))
+            else:
+                x = c(x, dfd)
+                x.add_traces(x_x(dfd.loc[:len(dfd) - 2], 0.5))
+                x.add_traces(x_x2(dfd.loc[len(dfd) - 1], 1))
+
+        return x
 
     '''t_indexes = list(dfs[dfs['Тип'].isin(t)].index)
     dft = dfs.drop(list(set(set(list(dfs.index))).difference(t_indexes)))
@@ -307,11 +412,11 @@ def update_g(s,d,t,o,v,n,n1):
         dfp = dfp.drop(list(set(set(list(dfp.index))).intersection(mp_indexes)))'''
 
     table_data = [
-                    ['</b>Крайне<Br>вероятный', '</b>1'],
-                    ['Вероятный', '0.8'],
-                    ['Возможный', '0.6'],
-                    ['Мало-<Br>вероятный', '0.4'],
-                    ['Крайне<Br>мало-<Br>вероятный', '</b>0.2']]
+                    ['</b>Крайне<Br>вероятный', '</b><1'],
+                    ['Вероятный', '<0.8'],
+                    ['Возможный', '<0.6'],
+                    ['Мало-<Br>вероятный', '<0.4'],
+                    ['Крайне<Br>мало-<Br>вероятный', '</b><0.2']]
     table_data_2 = [['</b>Пренебрежимо<Br>малые', '</b>Очень<Br>незначительные', '</b>Незначительные', '</b>Заметные', '</b>Большие', '</b>Катастрофические'],
                     ['<100$', '<1000$', '<32000$', '<1000000$', '<32000000$', '<1000000000$']]
 
@@ -321,8 +426,8 @@ def update_g(s,d,t,o,v,n,n1):
 
     z =go.Scatter(#x= np.sqrt((-2*zy) +0.8),
                   #y=zy,
-                  x= [0,32000,32000],
-                  y= [0.4,0.4,0],
+                  x= [0,10**p,10**p],
+                  y= [v,v,0],
                   line =dict(color='FireBrick',width=5),
                   xaxis='x2',
                   yaxis='y2',
@@ -374,21 +479,26 @@ def update_g(s,d,t,o,v,n,n1):
     #if int(s[1]) != int(df['Дата'].sort_values().unique()[0]): x = c(x,dfs,dfp)
     #x.add_trace(x2)
     #x.add_trace(x3)
-    x = at(x,s,d,t,o,df)
+    x = at(x,s,j,g,d,t,o,df)
     x.add_trace(z)
 
+    '''x.add_annotation(text="Absolutely-positioned annotation",
+                       xref="x2", yref="y2",
+                       x=3, y=0.3, showarrow=True,
+                     )'''
 
     x.update_layout(height=700,
                     width=1000,
                     #paper_bgcolor='black',
                     plot_bgcolor='black',
                     #clickmode = 'event+select'
+
                     )
     if o == []:
         x.add_shape(type="rect",
                       xref="x2", yref="y2",
                       fillcolor="PaleTurquoise",
-                      x0=0, y0=0, x1=32000, y1=0.4,
+                      x0=0, y0=0, x1=10**p, y1=v,
                       line_color="LightSeaGreen",
                       opacity=0.5)
 
@@ -441,7 +551,7 @@ def update_g(s,d,t,o,v,n,n1):
                            'showticklabels': False
                            })
 
-    x.layout.margin.update({'t': 50, 'b': 0,'l': 0})
+    x.layout.margin.update({'t': 10, 'b': 0,'l': 0})
     for i in range(len(x.layout.annotations)):
         x.layout.annotations[i].font.size = 12
 
@@ -450,10 +560,26 @@ def update_g(s,d,t,o,v,n,n1):
 
     do = dft['Название'].unique()
 
-    if v != []:
-        do = [*do, *v]
+    if l != []:
+        do = [*do, *l]
     return x, y, do
 
+
+@app.callback(Output('hidden-div-2','children'),
+              Input('v', 'value'),
+              Input('p','value'),
+              prevent_initial_call=True)
+def update_ax(a,b):
+    global p
+    global v
+    global df
+
+    v = a[0]
+    p = b[0]
+
+    df['Незначительный'] = (df['Вероятность'].astype(float) < v) & (df['Последствия'].astype(float) < 10 ** p)
+    g_df['Незначительный'] = (df['Вероятность'].astype(float) < v) & (df['Последствия'].astype(float) < 10 ** p)
+    return ''
 
 
 

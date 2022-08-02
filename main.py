@@ -141,18 +141,30 @@ content = html.Div(id = "page-content",
                                                value=[v],
                                                id='v',
                                                tooltip={"placement": "bottom", "always_visible": True},
-                                               included = True
+                                               included = True,
+                                                marks = {
+                                                0: {'label': '0', 'style': {'color': '#77b0b1'}},
+                                                0.2: {'label': '0.2'},
+                                                0.4: {'label': '0.4'},
+                                                0.6: {'label': '0.6'},
+                                                0.8: {'label': '0.8'},
+                                                1: {'label': '1', 'style': {'color': '#f50'}}},
                                                # value=int(df.loc[0, 'Дата']),
                                                # tooltip={"placement":"right"}
                                                ),
                                  html.Br(),
-                                 html.A("Шкала последствий (log10):", style={'text-align': "center"}),
+                                 html.A("Шкала последствий (степень 10):", style={'text-align': "center"}),
                                  dcc.RangeSlider(1,9,
                                                #marks={i: '{}'.format(10 ** i) for i in [0,1.5,3,4.5,6,7.5,9]},
                                                value=[p],
                                                id='p',
                                                tooltip={"placement": "bottom", "always_visible": True},
-                                               included = True
+                                               included = True,
+                                               marks = {
+                                                1: {'label': '1', 'style': {'color': '#77b0b1'}},
+                                                3: {'label': '3'},
+                                                6: {'label': '6'},
+                                                9: {'label': '9', 'style': {'color': '#f50'}}},
                                                # value=int(df.loc[0, 'Дата']),
                                                # tooltip={"placement":"right"}
                                                ),
@@ -257,6 +269,7 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
     global p
     global v
     global df
+    print(df)
     #dfs = df.copy()
 
     #Нанесение точек на график
@@ -392,7 +405,7 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
                 x.add_traces(x_x(dfd.loc[:len(dfd) - 2], 0.5))
                 x.add_traces(x_x2(dfd.loc[len(dfd) - 1], 1))
 
-        return x
+        return x , dfd
 
     '''t_indexes = list(dfs[dfs['Тип'].isin(t)].index)
     dft = dfs.drop(list(set(set(list(dfs.index))).difference(t_indexes)))
@@ -479,7 +492,7 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
     #if int(s[1]) != int(df['Дата'].sort_values().unique()[0]): x = c(x,dfs,dfp)
     #x.add_trace(x2)
     #x.add_trace(x3)
-    x = at(x,s,j,g,d,t,o,df)
+    x, dfd = at(x,s,j,g,d,t,o,df)
     x.add_trace(z)
 
     '''x.add_annotation(text="Absolutely-positioned annotation",
@@ -492,7 +505,6 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
                     #paper_bgcolor='black',
                     plot_bgcolor='black',
                     #clickmode = 'event+select'
-
                     )
     if o == []:
         x.add_shape(type="rect",
@@ -564,7 +576,6 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
         do = [*do, *l]
     return x, y, do
 
-
 @app.callback(Output('hidden-div-2','children'),
               Input('v', 'value'),
               Input('p','value'),
@@ -580,8 +591,6 @@ def update_ax(a,b):
     df['Незначительный'] = (df['Вероятность'].astype(float) < v) & (df['Последствия'].astype(float) < 10 ** p)
     g_df['Незначительный'] = (df['Вероятность'].astype(float) < v) & (df['Последствия'].astype(float) < 10 ** p)
     return ''
-
-
 
 if __name__ == "__main__":
     app.run_server(debug=True)

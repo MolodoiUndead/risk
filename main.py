@@ -8,20 +8,62 @@ from dash.dependencies import Input, Output, State
 #from dash import dash_table as dt
 #import datetime
 #import plotly.express as px
-import numpy as np
+#import numpy as np
 #import ipywidgets
 #from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import plotly.figure_factory as ff
 #import pyautogui
 #from selenium import webdriver
+import tkinter as tk
 
+
+root = tk.Tk()
+screen_height = root.winfo_screenheight()
+
+#F7FBF5
+#0079c2
+#8a8d8f
+
+SIDEBAR_STYLE = {
+    'position':'fixed',
+    "top":0,
+    "left":0,
+    "bottom":0,
+    "width":'17%',
+    "padding": "1% 1%",
+    "background-color": "PowderBlue",
+    'overflowY': 'scroll',
+    'text-align':"center"}
+
+R_SIDEBAR_STYLE = {
+    'position':'fixed',
+    "top":0,
+    #"right":0,
+    'left':'79.5%',
+    "bottom":0,
+    "width":'20.5%',
+    "padding": "1%",
+    "background-color": "PowderBlue",
+    'overflowY': 'scroll',
+    #'text-align':"center"
+}
 
 CONTENT_STYLE = {
-    "margin-left": "11rem",
+    'position':'fixed',
+    #"margin-left": 310,
+    #"padding": "1rem 1rem",
+    "left":'17%',
+    'width':'62.5%',
+    'height':'100%',
+    #'height':'75em',
+    #"right":400,
+    "background-color":'#f3ecc2',
     "margin-right": "0rem",
-    "padding": "1rem 0rem",
+    "padding": "1% 1%",
+    'overflowY': 'scroll',
 }
+#style = {'color' : '#f3ecc2'}
 
 v = 0.4
 p = 4.5
@@ -46,142 +88,158 @@ df['Дата'] = df['Дата'].dt.round('1D')
 
 df['Незначительный'] = (df['Вероятность'].astype(float) < v) & (df['Последствия'].astype(float) < 10**p)
 
-app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
-
+app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP],
+                suppress_callback_exceptions=True
+                )
 g_v = df['Название'].unique()
 g_df = df.copy()
+sidebar = html.Div(id = "sidebar",
+                   children =[
+                            dbc.Card([html.H5('Первичная сортировка',style={'text-align':"center"}),
+                                html.A("Выбор актива:",style={'text-align':"center"}),
+                                dcc.Dropdown(
+                                 options = df['Название'].unique(),
+                                 value = df['Название'].unique(),
+                                 id='d',
+                                 multi=True,
+                                 style={'margin-left': '2.5%', 'width': '95%','height':'50%',#'overflowY': 'scroll'
+                                        }
+                            ),
+                            html.Br(),
+                            html.A("Выбор подразделения:",style={'text-align':"center"}),
+                            dcc.Dropdown(
+                                 df['Тип'].unique(),
+                                 df['Тип'].unique(),
+                                 id='t',
+                                 multi=True,
+                                 style={'margin-left': '2.5%', 'width': '95%'}
+                                ),
+                            html.Br(),
+                            dcc.Checklist([' Незначительные риски',' Показывать историю'],
+                                          [' Незначительные риски',' Показывать историю'],
+                                          id='o',
+                                          style={'margin-left': '2.5%', 'width': '95%','margin-bottom':'5%'}
+                                          )]),
+                            html.Br(),
+                            dbc.Card([html.H5('Ручная сортировка',style={'text-align':"center"}),
+                            html.A("Отслеживать активы:",style={'text-align':"center"}),
+                            dcc.Dropdown(
+                                 options=[],
+                                 value=[],
+                                 id='r',
+                                 multi=True,
+                                 style={'margin-left': '2.5%', 'width': '95%'}
+                                ),
+                             html.Br(),
+                             html.Button('Применить', id='button-example-1',style={'margin-left': '5%', 'width': '90%'}
+                                        ),
+                             html.Br(),
+                             html.Button('Сбросить', id='button-example-2',style={'margin-left': '5%', 'width': '90%','margin-bottom':'5%'}
+                                                                                  )]),
+                             html.Br(),
+                             html.Div(id='hidden-div', style={'display':'none'}),
+                             html.Div(id='hidden-div-1', style={'display':'none'}),
+
+                             dbc.Card([html.H5('Настройка уровня значимости',style={'text-align':"center"}),
+                             html.A("Шкала вероятности:",style={'text-align':"center"}),
+                             dcc.RangeSlider(0,1,
+                                   value=[v],
+                                   id='v',
+                                   tooltip={"placement": "bottom", "always_visible": True},
+                                   included = True,
+                                    marks = {
+                                    0: {'label': '0', 'style': {'color': '#77b0b1'}},
+                                    0.2: {'label': '0.2'},
+                                    0.4: {'label': '0.4'},
+                                    0.6: {'label': '0.6'},
+                                    0.8: {'label': '0.8'},
+                                    1: {'label': '1', 'style': {'color': '#f50'}}},
+                                   # value=int(df.loc[0, 'Дата']),
+                                   # tooltip={"placement":"right"}
+                                   ),
+                             html.Br(),
+                             html.A("Шкала последствий (степень 10):", style={'text-align': "center"}),
+                             dcc.RangeSlider(1,9,
+                                           #marks={i: '{}'.format(10 ** i) for i in [0,1.5,3,4.5,6,7.5,9]},
+                                           value=[p],
+                                           id='p',
+                                           tooltip={"placement": "bottom", "always_visible": True},
+                                           included = True,
+                                           marks = {
+                                            1: {'label': '1', 'style': {'color': '#77b0b1'}},
+                                            3: {'label': '3'},
+                                            6: {'label': '6'},
+                                            9: {'label': '9', 'style': {'color': '#f50'}}}
+                                           # value=int(df.loc[0, 'Дата']),
+                                           # tooltip={"placement":"right"}
+                                           )]),
+                             html.Div(id='hidden-div-2', style={'display':'none'})],
+                                style=SIDEBAR_STYLE,
+                               #style={'width': 300,'text-align':"center"}
+                   )
+
+rsidebar = html.Div([dbc.Card([html.H5('Выбор временного промежутка',style={'text-align':"center"}),
+                    dbc.Row([ dbc.Col([
+                    html.A("Год",style={'text-align':"center"}),
+                    dcc.RangeSlider(int(df['Дата'].dt.year.min()),
+                              int(df['Дата'].dt.year.max()),
+                              1,
+                              value = [int(df['Дата'].dt.year.min()),
+                              int(df['Дата'].dt.year.max())],
+                              id='s',
+                                    vertical= True,
+                                verticalHeight =screen_height*0.5,
+                              #value=int(df.loc[0, 'Дата']),
+                              #tooltip={"placement":"right"}
+                                marks={i: '{}'.format(str(i)) for i in range(int(df['Дата'].dt.year.min()),int(df['Дата'].dt.year.max())+1)}
+                               )],style={'margin-left':'10%'}),
+                    dbc.Col([html.A("Месяц",style={'text-align':"center"}),
+                       dcc.RangeSlider(1,12,1,
+                                       value=[1,12],
+                                       id='j',
+                                        vertical= True,
+                                        verticalHeight =screen_height*0.5,
+                                        marks={i: '{}'.format(str(i)) for i in range(13)}
+                                       # value=int(df.loc[0, 'Дата']),
+                                       # tooltip={"placement":"right"}
+                                       )],style={'margin-left':'7%'}),
+                    dbc.Col([html.A("День",style={'text-align':"center"}),
+                       dcc.RangeSlider(1,31,1,
+                                       value=[1,31],
+                                       id='g',
+                                        vertical= True,
+                                        verticalHeight =screen_height*0.5,
+                                        marks={i: '{}'.format(str(i)) for i in range(32)}
+                                       # value=int(df.loc[0, 'Дата']),
+                                       # tooltip={"placement":"right"}
+                                       )],style={'margin-left':'7%'})])])],
+                        style=R_SIDEBAR_STYLE)
 content = html.Div(id = "page-content",
                    children = [dbc.Row([
-                       dbc.Col([
-                                        html.A("Год",style={'text-align':"center"}),
-                                        dcc.RangeSlider(int(df['Дата'].dt.year.min()),
-                                                  int(df['Дата'].dt.year.max()),
-                                                  1,
-                                                  value = [int(df['Дата'].dt.year.min()),
-                                                  int(df['Дата'].dt.year.max())],
-                                                  id='s',
-                                                  #value=int(df.loc[0, 'Дата']),
-                                                  #tooltip={"placement":"right"}
-                                                   ),
-                                        html.A("Месяц",style={'text-align':"center"}),
-                                           dcc.RangeSlider(1,12,1,
-                                                           value=[1,12],
-                                                           id='j',
-                                                           # value=int(df.loc[0, 'Дата']),
-                                                           # tooltip={"placement":"right"}
-                                                           ),
-                                        html.A("День",style={'text-align':"center"}),
-                                           dcc.RangeSlider(1,31,1,
-                                                           value=[1,31],
-                                                           id='g',
-                                                           # value=int(df.loc[0, 'Дата']),
-                                                           # tooltip={"placement":"right"}
-                                                           ),
+                                dbc.Col([
+                                html.H2("Система контроля рисков",style={'height':'3%','text-align':"center"}),
                                 dcc.Graph(id='x',
-                                          config={'displayModeBar': False}),
+                                          config={'displayModeBar': False,'showAxisDragHandles':False,'showAxisRangeEntryBoxes':False}),
                                 dcc.Graph(id='y',
-                                          config={'displayModeBar': False})],style={'text-align':"center"}),
-                       dbc.Col([
-                                html.Br(),
-                                html.Br(),
-                                dbc.Card([ html.H4('Первичная сортировка',style={'text-align':"center"}),
-                                            html.Br(),
-                                            html.A("Выбор актива",style={'text-align':"center"}),
-                                            dcc.Dropdown(
-                                             options = df['Название'].unique(),
-                                             value = df['Название'].unique(),
-                                             id='d',
-                                             multi=True,
-                                             style={'width': 250, 'margin-left': 5}
-                                        ),
-                                        html.Br(),
-                                        html.A("Выбор подразделения",style={'text-align':"center"}),
-                                        dcc.Dropdown(
-                                             df['Тип'].unique(),
-                                             df['Тип'].unique(),
-                                             id='t',
-                                             multi=True,
-                                             style={'width': 250, 'margin-left': 5}
-                                            ),
-                                        html.Br(),
-                                        dcc.Checklist([' Незначительные риски'],
-                                                      [' Незначительные риски'],
-                                                      id='o',
-                                                      style={'width': 250, 'margin-left': 10, 'font-size': 20}),
-
-
-                                ],
-                                    style={'width': 270}),
-                       html.Br(),
-                       dbc.Card([html.H4('Ручная сортировка',style={'text-align':"center"}),
-                                 html.Br(),
-                                 html.A("Отслеживать активы:",style={'text-align':"center"}),
-                                 dcc.Dropdown(
-                                             options=[],
-                                             value=[],
-                                             id='r',
-                                             multi=True,
-                                             style={'width': 250, 'margin-left': 5}
-                                            ),
-                                 html.Br(),
-                                 html.Button('Применить', id='button-example-1',style={'width': 200,'text-align':"center", 'margin-left': 35}),
-                                 html.Br(),
-                                 html.Button('Сбросить', id='button-example-2',style={'width': 200,'text-align':"center", 'margin-left': 35}),
-                                 html.Br(),
-                                 html.Div(id='hidden-div', style={'display':'none'}),
-                                 html.Div(id='hidden-div-1', style={'display':'none'}),
-                                 ],
-                                    style={'width': 270}),
-
-                                 html.Br(),
-                                 dbc.Card([html.H4('Настройка уровня значимости',style={'text-align':"center"}),
-                                 html.Br(),
-                                 html.A("Шкала вероятности:",style={'text-align':"center"}),
-                                 dcc.RangeSlider(0,1,
-                                               value=[v],
-                                               id='v',
-                                               tooltip={"placement": "bottom", "always_visible": True},
-                                               included = True,
-                                                marks = {
-                                                0: {'label': '0', 'style': {'color': '#77b0b1'}},
-                                                0.2: {'label': '0.2'},
-                                                0.4: {'label': '0.4'},
-                                                0.6: {'label': '0.6'},
-                                                0.8: {'label': '0.8'},
-                                                1: {'label': '1', 'style': {'color': '#f50'}}},
-                                               # value=int(df.loc[0, 'Дата']),
-                                               # tooltip={"placement":"right"}
-                                               ),
-                                 html.Br(),
-                                 html.A("Шкала последствий (степень 10):", style={'text-align': "center"}),
-                                 dcc.RangeSlider(1,9,
-                                               #marks={i: '{}'.format(10 ** i) for i in [0,1.5,3,4.5,6,7.5,9]},
-                                               value=[p],
-                                               id='p',
-                                               tooltip={"placement": "bottom", "always_visible": True},
-                                               included = True,
-                                               marks = {
-                                                1: {'label': '1', 'style': {'color': '#77b0b1'}},
-                                                3: {'label': '3'},
-                                                6: {'label': '6'},
-                                                9: {'label': '9', 'style': {'color': '#f50'}}},
-                                               # value=int(df.loc[0, 'Дата']),
-                                               # tooltip={"placement":"right"}
-                                               ),
-                                 html.Div(id='hidden-div-2', style={'display':'none'}),
-                                 ],
-                                    style={'width': 270})
-
-                       ],style={'width': 300})]
+                                          config={'displayModeBar': False,'showAxisDragHandles':False,'showAxisRangeEntryBoxes':False})],
+                           #width={"size": 8,"order": "last", "offset": 1 },
+                           #lg = 8
+                                )
+                   ],
+                       style={'width': '100%','text-align':"center"},
+                       justify="start",
+                       #className="g-0"
 
                    )],
-                   #style=CONTENT_STYLE
+                   style=CONTENT_STYLE
           )
 
 app.layout = dbc.Container(
     [
-        content
-    ]
+        sidebar,
+        rsidebar,
+        content,
+    ], style ={"background-color": '#f3ecc2'},
 )
 
 @app.callback(Output('hidden-div', 'children'),
@@ -269,22 +327,22 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
     global p
     global v
     global df
-    print(df)
     #dfs = df.copy()
 
     #Нанесение точек на график
     def x_x(df,op):
-        #d = df.reset_index(drop=True)['Дата'].get(0)
         x_n= go.Scatter(
                     x = df['Последствия'],
                     y = df['Вероятность'],
                     text = df['Название']+'<Br>'+df['Дата'].astype(str),
                     textposition="middle center",
                     textfont=dict(color='RebeccaPurple'),
-                    mode='markers+text',
+                    #mode='markers+text',
+                    mode='markers',
                     showlegend= False,
                     hovertemplate='Индекс вероятности: %{y} <Br>' +
-                                  'Индекс последствий: %{x}<Br><extra></extra>',
+                                  'Индекс последствий: %{x}<Br>'+
+                                  '%{text}<extra></extra>',
                                   #'Дата: {}.{}.{}<extra></extra>'.format(d),
                     legendgroup="group2",
                     name="second legend group",
@@ -299,7 +357,6 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
         return x_n
 
     def x_x2(df,op):
-        #d = df.reset_index(drop=True)['Дата'].get(0)
         x_n= go.Scatter(
                     x = [df['Последствия']],
                     y = [df['Вероятность']],
@@ -307,13 +364,15 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
                     textposition="middle center",
                     textfont=dict(color='purple'),
                     mode='markers+text',
+                    #mode='markers',
                     showlegend= False,
                     hovertemplate='Индекс вероятности: %{y} <Br>' +
-                                  'Индекс последствий: %{x}<Br><extra></extra>',
+                                  'Индекс последствий: %{x}<Br>'+
+                                  '%{text}<extra></extra>',
                                   #'Дата: {}.{}.{}<extra></extra>'.format(d),
                     legendgroup="group2",
                     name="second legend group",
-                    marker=dict(
+                    marker=dict(line=dict(width=2,color='white'),
                                 size=[55] * len(df),
                                 opacity=op,
                                 color=df["Цвет"],
@@ -338,45 +397,6 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
             x.add_trace(x4)
         return x
 
-    '''def at(x,s,j,g,d,t,o,df):
-        xe = []
-        print(s)
-        if o == []:
-            #mv_indexes = list(df[df['Незначительный'] == False].index)
-            #dfs = df.drop(list(set(set(list(df.index))).difference(mv_indexes)))
-            ov_indexes = list(df[df['Незначительный'] == True].index)
-            dfo = df.drop(list(set(set(list(df.index))).difference(ov_indexes)))
-            o_indexes = list(dfo[dfo['Дата'] == str(s[1])].index)
-            dfk = dfo.drop(list(set(set(list(dfo.index))).difference(o_indexes)))
-            f_indexes = list(df[df['Название'].isin(dfk['Название'].unique())].index)
-            df = df.drop(list(set(set(list(df.index))).intersection(f_indexes)))
-        for i in range(s[0],s[1]+1,1):
-
-            dfs = df.copy()
-            if i == s[1]:
-                op = 1
-            else:
-                op = 0.5
-            t_indexes = list(dfs[dfs['Тип'].isin(t)].index)
-            dft = dfs.drop(list(set(set(list(dfs.index))).difference(t_indexes)))
-            d_indexes = list(dfs[dfs['Название'].isin(d)].index)
-            dfd = dft.drop(list(set(set(list(dft.index))).difference(d_indexes)))
-            s_indexes = list(dfd[dfd['Дата'] == str(i)].index)
-            dfs = dfd.drop(list(set(set(list(dfd.index))).difference(s_indexes)))
-            x2 = x_x(dfs,op)
-            xe.append(x2)
-            if i == s[0]:
-                dfz = dfs.copy()
-            else:
-                dfz = pd.concat([dfs,dfz])
-
-        for j in dfz['Название'].unique():
-            dfx = dfz.copy()
-            d_indexes = list(dfx[dfx['Название'] == j].index)
-            dfd = dfx.drop(list(set(set(list(dfx.index))).difference(d_indexes)))
-            x = c(x, dfd)
-        x.add_traces(xe)
-        return x'''
 
     def at(x, s, j, g, d, t, o, df):
         dfs = df.copy()
@@ -395,34 +415,22 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
             d_indexes = list(dfx[dfx['Название'] == h].index)
             dfd = dfx.drop(list(set(set(list(dfx.index))).difference(d_indexes)))
             dfd = dfd.reset_index(drop=True)
-            if o == []:
+            if o == [' Показывать историю']:
                 if (dfd.loc[len(dfd) - 1]['Незначительный'] == False):
                     x = c(x, dfd)
                     x.add_traces(x_x(dfd.loc[:len(dfd)-2],0.5))
                     x.add_traces(x_x2(dfd.loc[len(dfd)-1], 1))
+            elif o == [' Незначительные риски']:
+                x.add_traces(x_x2(dfd.loc[len(dfd) - 1], 1))
+            elif o == []:
+                if (dfd.loc[len(dfd) - 1]['Незначительный'] == False):
+                    x.add_traces(x_x2(dfd.loc[len(dfd) - 1], 1))
             else:
                 x = c(x, dfd)
                 x.add_traces(x_x(dfd.loc[:len(dfd) - 2], 0.5))
                 x.add_traces(x_x2(dfd.loc[len(dfd) - 1], 1))
 
         return x , dfd
-
-    '''t_indexes = list(dfs[dfs['Тип'].isin(t)].index)
-    dft = dfs.drop(list(set(set(list(dfs.index))).difference(t_indexes)))
-    d_indexes = list(dfs[dfs['Название'].isin(d)].index)
-    dfd = dft.drop(list(set(set(list(dft.index))).difference(d_indexes)))
-    s_indexes = list(dfd[dfd['Дата'] == str(s[1])].index)
-    p_indexes = list(dfd[dfd['Дата'] == str(int(s[1])-1)].index)
-
-    dfp = dfd.drop(list(set(set(list(dfd.index))).difference(p_indexes)))
-    dfs = dfd.drop(list(set(set(list(dfd.index))).difference(s_indexes)))
-
-    if o == []:
-        mv_indexes = list(dfs[dfs['Незначительный'] == False].index)
-        mp_indexes = list(dfs[dfs['Незначительный'] == True].index)
-        mp_indexes = [*map(lambda x: x - 1, mp_indexes)]
-        dfs = dfs.drop(list(set(set(list(dfs.index))).difference(mv_indexes)))
-        dfp = dfp.drop(list(set(set(list(dfp.index))).intersection(mp_indexes)))'''
 
     table_data = [
                     ['</b>Крайне<Br>вероятный', '</b><1'],
@@ -447,17 +455,29 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
                   showlegend= False,
                   hoverinfo='skip')
 
-    y.update_layout(height=100,
-                    width=1000,
+    y.update_layout(height=screen_height*0.15,
+                    #width=1050,
+                    paper_bgcolor='#f3ecc2',
                     #paper_bgcolor='green',
                     plot_bgcolor='black',
                     )
-    y.layout.xaxis.update({
+
+    y.layout.xaxis.update({'domain': [.2, 1],
                            'title': 'Последствия реализации события риска',
+                           #'showgrid': False,
+                           #'showline': False,
+                           #"autorange": False,
+                           'zeroline': False,
                            'showticklabels': False
                            })
-    y.layout.margin.update({'t': 0, 'b': 0, 'l': 220})
-    y.layout.yaxis.update({'showticklabels': False
+
+    y.layout.margin.update({'t': 0, 'b': 40, 'l': 25,'r':25})
+    y.layout.yaxis.update({#'showgrid': False,
+                            #'showline': False,
+                            #"autorange": False,
+                            'zeroline': False,
+                            'showticklabels': False,
+                            'title': '',
                            })
 
     x1=go.Heatmap(
@@ -477,21 +497,12 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
         hoverinfo='skip',
         name="first legend group",
         #type='heatmap',
-        colorscale=[(0, "green"),(0.5, "yellow"), (1, "red")],
+        colorscale=[(0, "#14b1ab"),(0.5, "#f9d56e"), (1, "#e8505b")],
         xaxis = 'x2',
         yaxis = 'y2'
     )
 
-    #x = make_subplots(rows=1, cols=1,x_title = 'Последствия реализации события риска')
-
-
-    #x2 = x_x(dfs,1)
-    #x3 = x_x(dfp,0.3)
-
     x.add_trace(x1)
-    #if int(s[1]) != int(df['Дата'].sort_values().unique()[0]): x = c(x,dfs,dfp)
-    #x.add_trace(x2)
-    #x.add_trace(x3)
     x, dfd = at(x,s,j,g,d,t,o,df)
     x.add_trace(z)
 
@@ -500,13 +511,13 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
                        x=3, y=0.3, showarrow=True,
                      )'''
 
-    x.update_layout(height=700,
-                    width=1000,
-                    #paper_bgcolor='black',
+    x.update_layout(height=screen_height*0.65,
+                    #width=1050,
+                    paper_bgcolor='#f3ecc2',
                     plot_bgcolor='black',
                     #clickmode = 'event+select'
                     )
-    if o == []:
+    if o == [] or o == [' Показывать историю']:
         x.add_shape(type="rect",
                       xref="x2", yref="y2",
                       fillcolor="PaleTurquoise",
@@ -534,13 +545,13 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
 
     x['layout']['xaxis2'] = {}
     x['layout']['yaxis2'] = {}
-    x['layout']['xaxis3'] = {}
-    x['layout']['yaxis3'] = {}
 
     # Edit layout for subplots
+
     x.layout.xaxis.update({'domain': [0, .2],
                            'showticklabels': False
                            })
+
     x.layout.xaxis2.update({'domain': [0.2, 1.],
                             'showgrid': False,
                             'range': [0, 9],
@@ -559,11 +570,12 @@ def update_g(s,j,g,d,t,o,l,u,k,n,n1):
                             'zeroline': False,
                             'showticklabels': False
                             })
+
     x.layout.yaxis.update({'title': 'Вероятность реализации события риска',
                            'showticklabels': False
                            })
 
-    x.layout.margin.update({'t': 10, 'b': 0,'l': 0})
+    x.layout.margin.update({'t': 5, 'b': 0,'l': 0,'r':25})
     for i in range(len(x.layout.annotations)):
         x.layout.annotations[i].font.size = 12
 
